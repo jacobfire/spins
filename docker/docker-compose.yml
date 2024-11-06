@@ -1,0 +1,52 @@
+version: '3.5'
+
+services:
+  postgres:
+    container_name: postgres_nodeart
+    image: postgres:14.0
+    environment:
+      POSTGRES_DB: nodeart
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /data/postgres
+    volumes:
+      - ./nodeart:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - nodeart
+    restart: unless-stopped
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - postgres
+    volumes:
+      - ./../migrations/:/database
+    command:
+      [ "-path", "/database", "-database",  "postgres://postgres:postgres@postgres:5432/nodeart?sslmode=disable", "up" ]
+    networks:
+      - nodeart
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/user/pgadmin
+
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - nodeart
+    restart: unless-stopped
+
+networks:
+  nodeart:
+    driver: bridge
+
+volumes:
+  nodeart:
+  pgadmin:
