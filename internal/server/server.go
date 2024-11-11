@@ -8,6 +8,7 @@ import (
 	spinModel "NodeArt/internal/model/spin"
 	user2 "NodeArt/internal/model/user"
 	"NodeArt/internal/spin"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -152,7 +153,7 @@ func (w *webServer) profile(c *gin.Context) {
 
 	newDeposit, err := w.balancePersistor.Repo.GetBalance(email)
 	msg := fmt.Sprintf("can't get deposit: %s", err)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"response": msg,
 		})
@@ -171,7 +172,7 @@ func (w *webServer) deposit(c *gin.Context) {
 	wallet := Wallet{}
 	if err := c.ShouldBindJSON(&wallet); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"response": "wrong wallet",
+			"response": "wrong deposit",
 		})
 		return
 	}
@@ -193,13 +194,32 @@ func (w *webServer) deposit(c *gin.Context) {
 	}
 	email := user.(string)
 
-	err := w.balancePersistor.Repo.UpdateDeposit(email, wallet.Deposit)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "cant update wallet",
+	deposit, err := w.balancePersistor.Repo.GetBalance(email)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "currently can't get deposit",
 		})
 		return
 	}
+
+	if deposit == 0 {
+		_, err := w.balancePersistor.Repo.AddDeposit(email, wallet.Deposit)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "can't update wallet",
+			})
+			return
+		}
+	} else {
+		err := w.balancePersistor.Repo.UpdateDeposit(email, wallet.Deposit)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "can't update wallet",
+			})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"deposit": "updated",
 	})
@@ -278,7 +298,7 @@ func (w *webServer) spin(c *gin.Context) {
 	mu.Lock()
 
 	deposit, err := w.balancePersistor.Repo.GetBalance(email)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "cant update wallet",
 		})
@@ -358,7 +378,7 @@ func (w *webServer) history(c *gin.Context) {
 	email := user.(string)
 
 	spins, err := w.spinPersistor.Repo.GetSpinHistory(email)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "cant update wallet",
 		})

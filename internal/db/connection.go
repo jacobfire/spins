@@ -16,7 +16,8 @@ type Config struct {
 }
 
 func NewConnection(ctx context.Context, c Config) (*pgx.Conn, error) {
-	//connString := fmt.Sprintf("host=127.0.0.1 user=postgres password=postgres dbname=nodeart sslmode=disable")
+	log.Printf("host=%s user=%s password=%s dbname=%s sslmode=%s",
+		c.Host, c.Username, c.Password, c.DBName, c.SSLMode)
 	connString := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Username, c.Password, c.DBName, c.SSLMode)
 	conn, err := pgx.Connect(ctx, connString)

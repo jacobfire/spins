@@ -1,0 +1,1 @@
+DROP INDEX balance_email_idx;

@@ -5,7 +5,9 @@ import (
 	"NodeArt/internal/db/user_repo/users"
 	"context"
 	"crypto/md5"
+	"database/sql"
 	"encoding/hex"
+	"errors"
 	"github.com/jackc/pgx/v5"
 	"log"
 )
@@ -25,7 +27,7 @@ func (s Storage) GetUser(email, password string) (string, error) {
 		Password: getMD5Hash(password),
 	}
 	u, err := queries.GetUser(ctx, getUserCondition)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		log.Printf("fetching failed: %s", err)
 
 		return "", err
@@ -43,7 +45,7 @@ func (s Storage) InsertUser(email, password string) error {
 		Password: getMD5Hash(password),
 	}
 	u, err := queries.GetUser(ctx, getUserCondition)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 	if u.Email != "" {
