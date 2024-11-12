@@ -1,0 +1,66 @@
+definitions:
+  server.JSONResult:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+      response:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/register:
+    post:
+      consumes:
+      - application/json
+      description: register new account by email and password
+      parameters:
+      - description: username and password params
+        in: body
+        name: payload
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: desc
+          schema:
+            allOf:
+            - $ref: '#/definitions/server.JSONResult'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+        "400":
+          description: desc
+          schema:
+            allOf:
+            - $ref: '#/definitions/server.JSONResult'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+        "500":
+          description: desc
+          schema:
+            allOf:
+            - $ref: '#/definitions/server.JSONResult'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+      summary: Register an account
+      tags:
+      - accounts
+swagger: "2.0"

@@ -1,12 +1,13 @@
 package server
 
 import (
+	"NodeArt/docs"
 	"NodeArt/internal"
 	"NodeArt/internal/auth"
 	"NodeArt/internal/db"
 	"NodeArt/internal/model/balance"
 	spinModel "NodeArt/internal/model/spin"
-	user2 "NodeArt/internal/model/user"
+	userModel "NodeArt/internal/model/user"
 	"NodeArt/internal/spin"
 	"database/sql"
 	"errors"
@@ -16,12 +17,15 @@ import (
 	"log"
 	"net/http"
 	"sync"
+
+	"github.com/swaggo/files"       // swagger embed files
+	"github.com/swaggo/gin-swagger" // gin-swagger middleware
 )
 
 type webServer struct {
 	host             string
 	port             string
-	userPersistor    user2.Persistor
+	userPersistor    userModel.Persistor
 	balancePersistor balance.Persistor
 	spinPersistor    spinModel.Persistor
 }
@@ -32,11 +36,11 @@ type Config struct {
 	Conn *pgx.Conn
 }
 
-func userPersistor(c *pgx.Conn) user2.Persistor {
+func userPersistor(c *pgx.Conn) userModel.Persistor {
 	storage := db.Storage{
 		Conn: c,
 	}
-	return user2.NewPersistor(storage)
+	return userModel.NewPersistor(storage)
 }
 
 func balancePersistor(c *pgx.Conn) balance.Persistor {
@@ -63,28 +67,82 @@ func New(c Config) *webServer {
 	}
 }
 
+// @title           Swagger Example API
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api
+
+// @securityDefinitions.basic  BasicAuth
+
+// @externalDocs.description  OpenAPI
+// @externalDocs.url          https://swagger.io/resources/open-api/
 func (w *webServer) Run() {
+	// programmatically set swagger info
+	docs.SwaggerInfo.Title = "Swagger Example API"
+	docs.SwaggerInfo.Description = "This is a sample server Petstore server."
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = "localhost:8080"
+	//docs.SwaggerInfo.BasePath = "/v2"
+	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
+
+	api := r.Group("/api")
+	{
+		r.GET("/ping", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "pong",
+			})
 		})
-	})
-	r.POST("/api/register", w.register)
-	r.POST("/api/login", w.login)
-	r.GET("/api/profile", auth.AuthenticateMiddleware, w.profile)
+		api.POST("/register", w.register)
+		api.POST("/login", w.login)
+		api.GET("/profile", auth.AuthenticateMiddleware, w.profile)
 
-	r.POST("/api/wallet/deposit", auth.AuthenticateMiddleware, w.deposit)
-	r.POST("/api/wallet/withdraw", auth.AuthenticateMiddleware, w.withdraw)
+		walletGroup := api.Group("wallet")
+		{
+			walletGroup.POST("/deposit", auth.AuthenticateMiddleware, w.deposit)
+			walletGroup.POST("/withdraw", auth.AuthenticateMiddleware, w.withdraw)
+		}
 
-	r.POST("/api/slot/spin", auth.AuthenticateMiddleware, w.spin)
-	r.POST("/api/slot/history", auth.AuthenticateMiddleware, w.history)
-
+		slotGroup := api.Group("slot")
+		{
+			slotGroup.POST("/spin", auth.AuthenticateMiddleware, w.spin)
+			slotGroup.POST("/history", auth.AuthenticateMiddleware, w.history)
+		}
+	}
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.Run(fmt.Sprintf("%s:%s", w.host, w.port))
 }
 
+type JSONResult struct {
+	Code     int         `json:"code" `
+	Message  string      `json:"message"`
+	Response string      `json:"response"`
+	Data     interface{} `json:"data"`
+}
+
+// Register godoc
+// @Summary      Register an account
+// @Description  register new account by email and password
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Param payload body string true "username and password params"
+// @Success      200  {object}  JSONResult{data=[]string} "desc"
+// @Failure      400  {object}  JSONResult{data=[]string} "desc"
+// @Failure      500  {object}  JSONResult{data=[]string} "desc"
+// @Router       /api/register [post]
 func (w *webServer) register(c *gin.Context) {
-	var signUp user2.User
+	var signUp userModel.User
 	if err := c.ShouldBindJSON(&signUp); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"response": "wrong credentials",
@@ -114,7 +172,7 @@ func (w *webServer) register(c *gin.Context) {
 }
 
 func (w *webServer) login(c *gin.Context) {
-	var signIn user2.User
+	var signIn userModel.User
 	if err := c.ShouldBindJSON(&signIn); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"response": "wrong credentials",
