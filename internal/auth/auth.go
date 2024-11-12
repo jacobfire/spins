@@ -30,8 +30,7 @@ func CreateToken(username string) (string, error) {
 
 		return "", err
 	}
-	// Print information about the created token
-	log.Printf("Token claims added: %+v\n", claims)
+
 	return tokenString, nil
 }
 
@@ -70,8 +69,6 @@ func AuthenticateMiddleware(c *gin.Context) {
 		return
 	}
 	c.Set("current_user", email)
-
-	log.Printf("CLAIMS: %v", cl)
 
 	// Continue with the next middleware or route handler
 	c.Next()

@@ -30,7 +30,7 @@ func main() {
 		Username: viper.GetString("db.username"),
 		Password: viper.GetString("db.password"),
 		DBName:   viper.GetString("db.dbname"),
-		SSLMode:  viper.GetString("db.sslmode"),
+		SSLMode:  viper.GetString("db.ssl_mode"),
 	}
 	conn, err := db.NewConnection(ctx, DBConf)
 	if err != nil {
@@ -39,10 +39,10 @@ func main() {
 	}
 	defer conn.Close(ctx)
 
-	config := server.Config{
-		Port: viper.GetString("port"),
+	appConfig := server.Config{
+		Port: viper.GetString("app.port"),
 		Conn: conn,
 	}
-	ws := server.New(config)
+	ws := server.New(appConfig)
 	ws.Run()
 }

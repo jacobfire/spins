@@ -1,6 +1,13 @@
 package server
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"sync"
+
 	"NodeArt/docs"
 	"NodeArt/internal"
 	"NodeArt/internal/auth"
@@ -9,15 +16,9 @@ import (
 	spinModel "NodeArt/internal/model/spin"
 	userModel "NodeArt/internal/model/user"
 	"NodeArt/internal/spin"
-	"database/sql"
-	"errors"
-	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"log"
-	"net/http"
-	"sync"
-
 	"github.com/swaggo/files"       // swagger embed files
 	"github.com/swaggo/gin-swagger" // gin-swagger middleware
 )
@@ -67,32 +68,31 @@ func New(c Config) *webServer {
 	}
 }
 
+// Run godoc
 // @title           Swagger Example API
 // @version         1.0
 // @description     This is a sample server celler server.
 // @termsOfService  http://swagger.io/terms/
-
 // @contact.name   API Support
 // @contact.url    http://www.swagger.io/support
 // @contact.email  support@swagger.io
-
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
 // @host      localhost:8080
 // @BasePath  /api
 
-// @securityDefinitions.basic  BasicAuth
+// @securityDefinitions.apiKey JWT
+// @in header
+// @name token
 
 // @externalDocs.description  OpenAPI
 // @externalDocs.url          https://swagger.io/resources/open-api/
 func (w *webServer) Run() {
 	// programmatically set swagger info
-	docs.SwaggerInfo.Title = "Swagger Example API"
-	docs.SwaggerInfo.Description = "This is a sample server Petstore server."
+	docs.SwaggerInfo.Title = "Swagger Slot API"
+	docs.SwaggerInfo.Description = "This is a slot server."
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.Host = "localhost:8080"
-	//docs.SwaggerInfo.BasePath = "/v2"
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 	r := gin.Default()
 
@@ -123,24 +123,17 @@ func (w *webServer) Run() {
 	r.Run(fmt.Sprintf("%s:%s", w.host, w.port))
 }
 
-type JSONResult struct {
-	Code     int         `json:"code" `
-	Message  string      `json:"message"`
-	Response string      `json:"response"`
-	Data     interface{} `json:"data"`
-}
-
 // Register godoc
 // @Summary      Register an account
 // @Description  register new account by email and password
 // @Tags         accounts
 // @Accept       json
 // @Produce      json
-// @Param payload body string true "username and password params"
-// @Success      200  {object}  JSONResult{data=[]string} "desc"
-// @Failure      400  {object}  JSONResult{data=[]string} "desc"
-// @Failure      500  {object}  JSONResult{data=[]string} "desc"
-// @Router       /api/register [post]
+// @Param payload body userModel.User true "username and password params"
+// @Success      200  {object}  JSONResult "desc"
+// @Failure      400  {object}  JSONResult "desc"
+// @Failure      500  {object}  JSONResult "desc"
+// @Router       /register [post]
 func (w *webServer) register(c *gin.Context) {
 	var signUp userModel.User
 	if err := c.ShouldBindJSON(&signUp); err != nil {
@@ -171,6 +164,17 @@ func (w *webServer) register(c *gin.Context) {
 	})
 }
 
+// Login godoc
+// @Summary      Log in to an account
+// @Description  login with email and password
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Param payload body userModel.User true "username and password params"
+// @Success      200  {object}   TokenResult "desc"
+// @Failure      400  {object}   JSONResult "desc"
+// @Failure      500  {object}   JSONResult "desc"
+// @Router       /login [post]
 func (w *webServer) login(c *gin.Context) {
 	var signIn userModel.User
 	if err := c.ShouldBindJSON(&signIn); err != nil {
@@ -200,6 +204,17 @@ func (w *webServer) login(c *gin.Context) {
 	})
 }
 
+// Profile godoc
+// @Summary      review details of a profile
+// @Description  profile shows details
+// @Tags         accounts
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}   JSONResult "desc"
+// @Failure      400  {object}   JSONResult "desc"
+// @Failure      500  {object}   JSONResult "desc"
+// @Router       /profile [get]
+// @Security  Bearer
 func (w *webServer) profile(c *gin.Context) {
 	user, ok := c.Get("current_user")
 	if !ok {

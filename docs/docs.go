@@ -9,13 +9,108 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/register": {
+        "/login": {
+            "post": {
+                "description": "login with email and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "accounts"
+                ],
+                "summary": "Log in to an account",
+                "parameters": [
+                    {
+                        "description": "username and password params",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "desc",
+                        "schema": {
+                            "$ref": "#/definitions/server.TokenResult"
+                        }
+                    },
+                    "400": {
+                        "description": "desc",
+                        "schema": {
+                            "$ref": "#/definitions/server.JSONResult"
+                        }
+                    },
+                    "500": {
+                        "description": "desc",
+                        "schema": {
+                            "$ref": "#/definitions/server.JSONResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/profile": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "profile shows details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "accounts"
+                ],
+                "summary": "review details of a profile",
+                "responses": {
+                    "200": {
+                        "description": "desc",
+                        "schema": {
+                            "$ref": "#/definitions/server.JSONResult"
+                        }
+                    },
+                    "400": {
+                        "description": "desc",
+                        "schema": {
+                            "$ref": "#/definitions/server.JSONResult"
+                        }
+                    },
+                    "500": {
+                        "description": "desc",
+                        "schema": {
+                            "$ref": "#/definitions/server.JSONResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
             "post": {
                 "description": "register new account by email and password",
                 "consumes": [
@@ -35,7 +130,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/user.User"
                         }
                     }
                 ],
@@ -43,64 +138,19 @@ const docTemplate = `{
                     "200": {
                         "description": "desc",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/server.JSONResult"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/server.JSONResult"
                         }
                     },
                     "400": {
                         "description": "desc",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/server.JSONResult"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/server.JSONResult"
                         }
                     },
                     "500": {
                         "description": "desc",
                         "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/server.JSONResult"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
+                            "$ref": "#/definitions/server.JSONResult"
                         }
                     }
                 }
@@ -111,29 +161,58 @@ const docTemplate = `{
         "server.JSONResult": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {},
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "server.TokenResult": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJwbGF5ZXIiLCJleHAiOjE3MzE0MjIyNDIsImlhdCI6MTczMTQxODY0MiwiaXNzIjoiYXV0aC1hcHAiLCJzdWIiOiJqb2huZG9lMUBleGFtcGxlLmNvbSJ9.pzwLR3DVS40YF4FheURIUDRLk0dyQvLg4-cUOykanqA"
+                }
+            }
+        },
+        "user.User": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "minLength": 8
                 },
-                "response": {
+                "username": {
                     "type": "string"
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "JWT": {
+            "type": "apiKey",
+            "name": "token",
+            "in": "header"
+        }
+    },
+    "externalDocs": {
+        "description": "OpenAPI",
+        "url": "https://swagger.io/resources/open-api/"
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Swagger Example API",
+	Description:      "This is a sample server celler server.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

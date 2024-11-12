@@ -1,8 +1,10 @@
-port: 8080
+app:
+  host: "127.0.0.1"
+  port: 8080
 db:
 #  host: "127.0.0.1"
   host: "nodeart_db" # DB host in case of docker-compose
   username: "postgres"
   password: "postgres"
   dbname: "nodeart"
-  sslmode: "disable"
+  ssl_mode: "disable"

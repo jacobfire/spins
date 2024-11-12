@@ -1,18 +1,100 @@
+basePath: /api
 definitions:
   server.JSONResult:
     properties:
-      code:
-        type: integer
-      data: {}
       message:
         type: string
-      response:
+    type: object
+  server.TokenResult:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJwbGF5ZXIiLCJleHAiOjE3MzE0MjIyNDIsImlhdCI6MTczMTQxODY0MiwiaXNzIjoiYXV0aC1hcHAiLCJzdWIiOiJqb2huZG9lMUBleGFtcGxlLmNvbSJ9.pzwLR3DVS40YF4FheURIUDRLk0dyQvLg4-cUOykanqA
         type: string
     type: object
+  user.User:
+    properties:
+      password:
+        minLength: 8
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+externalDocs:
+  description: OpenAPI
+  url: https://swagger.io/resources/open-api/
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a sample server celler server.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
 paths:
-  /api/register:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: login with email and password
+      parameters:
+      - description: username and password params
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/user.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: desc
+          schema:
+            $ref: '#/definitions/server.TokenResult'
+        "400":
+          description: desc
+          schema:
+            $ref: '#/definitions/server.JSONResult'
+        "500":
+          description: desc
+          schema:
+            $ref: '#/definitions/server.JSONResult'
+      summary: Log in to an account
+      tags:
+      - accounts
+  /profile:
+    get:
+      consumes:
+      - application/json
+      description: profile shows details
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: desc
+          schema:
+            $ref: '#/definitions/server.JSONResult'
+        "400":
+          description: desc
+          schema:
+            $ref: '#/definitions/server.JSONResult'
+        "500":
+          description: desc
+          schema:
+            $ref: '#/definitions/server.JSONResult'
+      security:
+      - Bearer: []
+      summary: review details of a profile
+      tags:
+      - accounts
+  /register:
     post:
       consumes:
       - application/json
@@ -23,44 +105,28 @@ paths:
         name: payload
         required: true
         schema:
-          type: string
+          $ref: '#/definitions/user.User'
       produces:
       - application/json
       responses:
         "200":
           description: desc
           schema:
-            allOf:
-            - $ref: '#/definitions/server.JSONResult'
-            - properties:
-                data:
-                  items:
-                    type: string
-                  type: array
-              type: object
+            $ref: '#/definitions/server.JSONResult'
         "400":
           description: desc
           schema:
-            allOf:
-            - $ref: '#/definitions/server.JSONResult'
-            - properties:
-                data:
-                  items:
-                    type: string
-                  type: array
-              type: object
+            $ref: '#/definitions/server.JSONResult'
         "500":
           description: desc
           schema:
-            allOf:
-            - $ref: '#/definitions/server.JSONResult'
-            - properties:
-                data:
-                  items:
-                    type: string
-                  type: array
-              type: object
+            $ref: '#/definitions/server.JSONResult'
       summary: Register an account
       tags:
       - accounts
+securityDefinitions:
+  JWT:
+    in: header
+    name: token
+    type: apiKey
 swagger: "2.0"

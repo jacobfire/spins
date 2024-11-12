@@ -10,4 +10,10 @@ build:
 push:
 	docker push ${DOCKER_USERNAME}/${APPLICATION_NAME}
 
+runlatest:
+	docker-compose down
+	docker rmi nodeart-web:latest -f
+	swag init -g internal/server/server.go
+	docker-compose up
+
 .PHONY: build
